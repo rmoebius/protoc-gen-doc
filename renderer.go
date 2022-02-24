@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"strings"
 	html_template "html/template"
 	text_template "text/template"
 
@@ -96,8 +97,15 @@ type Processor interface {
 //     data, err := RenderTemplate(RenderTypeHTML, &template, "{{range .Files}}{{.Name}}{{end}}")
 func RenderTemplate(kind RenderType, template *Template, inputTemplate string) ([]byte, error) {
 	if inputTemplate != "" {
-		processor := &textRenderer{inputTemplate}
-		return processor.Apply(template)
+		htmlKeyTag := "{html}"
+		if strings.Contains(inputTemplate, htmlKeyTag) {
+			strippedTemplate := strings.Replace(inputTemplate, htmlKeyTag, "", 1)
+			processor := &htmlRenderer{strippedTemplate}
+			return processor.Apply(template)
+		} else {
+			processor := &textRenderer{inputTemplate}
+			return processor.Apply(template)
+		}
 	}
 
 	processor, err := kind.renderer()
